@@ -1,0 +1,49 @@
+version: "3"
+
+services:
+  traefik:
+    container_name: traefik
+    image: traefik:v3.2.0
+    restart: always
+    command:
+      - --api.insecure=true
+      - --entrypoints.http.address=:80
+      - --entrypoints.https.address=:443
+      - --providers.docker=true
+      - --providers.docker.network=web
+      - --providers.docker.exposedByDefault=false
+      - --providers.file.directory=/config
+      - --providers.file.watch=true
+      - --certificatesresolvers.acmeresolver.acme.email=${EMAIL}
+      - --certificatesresolvers.acmeresolver.acme.storage=/letsencrypt/acme.json
+      - --certificatesresolvers.acmeresolver.acme.caserver=https://acme-v02.api.letsencrypt.org/directory
+      - --certificatesresolvers.acmeresolver.acme.tlschallenge=true
+      - --log.level=${LOG_LEVEL}
+      - --log.filePath=/logs/traefik.log
+      - --log.format=json
+    #      - --accesslog.filepath=/logs/access.log
+    #      - --accesslog.format=json
+    #      - --accesslog.fields.defaultmode=keep
+    #      - --accesslog.fields.names.ClientUsername=drop
+    #      - --accesslog.fields.headers.defaultmode=keep
+    #      - --accesslog.fields.headers.names.RequestHost=keep
+    logging:
+      options:
+        max-size: "10m"
+        max-file: "3"
+    networks:
+      - web
+    ports:
+      - 9080:8080
+      - 443:443
+      - 80:80
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+      - ./config:/config
+      - ./certs:/certs
+      - ./logs:/logs
+      - ./letsencrypt:/letsencrypt
+
+networks:
+  web:
+    external: true
